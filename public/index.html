@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar Fútbol</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Barlow+Semi+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#141a3a; --panel:#1d2550; --line:#2c3670; --text:#e9ecf8; --dim:#9aa3cc;
+  --amber:#ffb547; --home:#39d0bd; --away:#ff8a7a; --win:#5fe08a; --loss:#ff6b6b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:15px/1.4 "Barlow Semi Condensed",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;
+  padding:18px 20px 14px;border-bottom:2px solid var(--amber)}
+h1{margin:0;font:700 32px/1 Oswald,sans-serif;letter-spacing:.5px}
+h1 small{display:block;font:400 14px "Barlow Semi Condensed";color:var(--dim);letter-spacing:0;margin-top:4px}
+.controls{display:flex;gap:8px;align-items:center}
+input[type=date],button{font:600 15px "Barlow Semi Condensed";background:var(--panel);color:var(--text);
+  border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+button{background:var(--amber);color:#1a1300;border-color:var(--amber);cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+#status{padding:10px 20px;color:var(--dim);min-height:20px}
+#status.err{color:var(--loss)}
+#status.warn{color:var(--amber)}
+main{display:grid;grid-template-columns:repeat(auto-fill,minmax(370px,1fr));gap:14px;padding:4px 20px 24px}
+.game{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.meta{display:flex;justify-content:space-between;gap:8px;padding:7px 12px;font-size:13px;color:var(--dim);
+  border-bottom:1px solid var(--line)}
+.teams{padding:6px 12px}
+.team{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:8px;padding:5px 0}
+.tag{font:700 11px Oswald;text-align:center;border-radius:4px;padding:2px 0}
+.tag.h{background:var(--home);color:#062521}.tag.a{background:var(--away);color:#2b0a06}
+.name{font:600 19px/1.1 Oswald,sans-serif}
+.name .rk{color:var(--amber);font-size:14px;margin-right:4px}
+.info{display:flex;gap:10px;font-size:14px;white-space:nowrap}
+.info .pos{color:var(--dim)}
+.W{color:var(--win);font-weight:700}.L{color:var(--loss);font-weight:700}
+.boxes{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 10px}
+.box{border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.box.h{border-top:3px solid var(--home)}.box.a{border-top:3px solid var(--away)}
+.box h3{margin:0 0 3px;font:600 13px "Barlow Semi Condensed";color:var(--dim)}
+.box table{width:100%;border-collapse:collapse;font-size:14px}
+.box td{padding:1px 0}.box td:last-child{text-align:right;font-weight:700;white-space:nowrap}
+.fb{color:var(--amber);cursor:help}
+.calc{background:#171e45;border-top:1px solid var(--line);padding:9px 12px 11px}
+.calc table{width:100%;border-collapse:collapse;font-size:14px}
+.calc th{font-weight:600;color:var(--dim);text-align:right;padding:2px 4px;font-size:12px}
+.calc th:first-child,.calc td:first-child{text-align:left}
+.calc td{padding:3px 4px;text-align:right;border-top:1px solid var(--line)}
+.score{font:700 16px Oswald}
+.score .h{color:var(--home)}.score .a{color:var(--away)}
+.line{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.line b{font:700 20px Oswald;color:var(--amber)}
+.line span{color:var(--dim);font-size:13px}
+.sep{height:8px}
+input[type=search]{font:600 15px "Barlow Semi Condensed";background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:220px}
+.chk{display:flex;align-items:center;gap:5px;color:var(--dim);font-size:14px;white-space:nowrap}
+.controls{flex-wrap:wrap}
+@media (max-width:520px){input[type=search]{width:100%}.team{grid-template-columns:44px 1fr}.team .info{grid-column:2;font-size:13px}}
+button.nav{background:var(--panel);color:var(--text);border-color:var(--line);padding:7px 9px}
+.pl{border-top:1px solid var(--line);padding:9px 10px 11px;overflow-x:auto}
+.pl h4{margin:0 0 4px;font:600 13px "Barlow Semi Condensed";color:var(--dim)}
+.pl table{width:100%;border-collapse:collapse;font-size:13px}
+.pl th{font-weight:600;color:var(--dim);font-size:11.5px;text-align:right;padding:2px 2px}
+.pl td{padding:2px 2px;text-align:right;border-top:1px solid var(--line)}
+.pl th:nth-child(-n+3),.pl td:nth-child(-n+3){text-align:left}
+.pl td:first-child{max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl td:nth-child(2){color:var(--dim);font-size:12px}
+.pl td:nth-child(3){color:var(--dim);max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl td.pra{color:var(--amber);font-weight:700}
+.pl td.none{max-width:none;white-space:normal}
+.pl tr.side td{border-top:0;padding-top:6px;font-weight:700;text-align:left}
+.pl tr.side.h td{color:var(--home)}.pl tr.side.a td{color:var(--away)}
+.pl .none{color:var(--dim);font-size:13px;text-align:left}
+.day{grid-column:1/-1;margin:10px 0 -4px;font:600 18px Oswald,sans-serif;color:var(--amber)}
+.empty{grid-column:1/-1;padding:40px 10px;text-align:center;color:var(--dim)}
+footer{padding:0 20px 28px;color:var(--dim);font-size:13px;max-width:900px}
+footer p{margin:4px 0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+details{padding:0 20px 10px;color:var(--dim);font-size:13px}
+@media (max-width:420px){.pl table{font-size:12px}.pl td:first-child{max-width:92px}main{grid-template-columns:1fr;padding:4px 10px 20px}header{padding:14px 12px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+select{font:600 15px "Barlow Semi Condensed";background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:7px 8px;max-width:230px}
+.mini{width:100%;border-collapse:collapse;font-size:13.5px}
+.mini th{font-weight:600;color:var(--dim);font-size:12px;text-align:right;padding:1px 2px}
+.mini td{padding:1px 2px;text-align:right}
+.mini th:first-child,.mini td:first-child{text-align:left;color:var(--dim)}
+.mini td b{font-weight:700}
+.x2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.pct{font:700 17px Oswald}
+.pct.h{color:var(--home)}.pct.a{color:var(--away)}.pct{white-space:nowrap}
+.fav{outline:2px solid var(--amber);outline-offset:-2px;border-radius:4px}
+.flame{font:700 14px Oswald;padding:1px 8px;border-radius:12px;background:#3a2a10;color:var(--amber);white-space:nowrap}
+.flame.hot{background:var(--amber);color:#1a1300}
+.game.hot{border-color:var(--amber)}
+.final{color:var(--text);font-weight:700}
+.night{color:#9fb6ff}
+.pcts td.hotp b{color:var(--amber)}
+#metric{max-width:170px}
+.scorers{grid-column:1/-1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.scorers h3{margin:0 0 6px;font:600 15px Oswald,sans-serif;color:var(--amber)}
+.scorers table{max-width:560px}
+.pscorers{padding:0 12px 10px;font-size:13.5px}
+.pscorers .h{color:var(--home)}.pscorers .a{color:var(--away)}
+#source{max-width:120px}
+.odds{color:var(--dim)}
+.calc h4{margin:8px 0 3px;font:600 13px "Barlow Semi Condensed";color:var(--dim)}
+.calc h4:first-child{margin-top:0}
+.sub{color:var(--dim);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Radar Fútbol<small>Casa y fuera reales, % de goles, BTTS, corners y rachas · datos de Football-Data</small></h1>
+  <div class="controls">
+    <label for="league" class="sr">Liga</label>
+    <select id="league" autocomplete="off"><option value="E0">INGLATERRA PREMIER LEAGUE</option></select>
+    <label for="q" class="sr">Buscar equipo</label>
+    <input type="search" id="q" placeholder="Buscar equipo" autocomplete="off">
+    <label class="chk" title="Muestra solo los partidos donde el local o la visita tiene más de 55% de probabilidad (1X2), ordenados de mayor a menor confianza"><input type="checkbox" id="hot"> 🔥 +55%</label>
+    <label for="metric" class="sr">Ordenar por</label>
+    <select id="metric" title="Mercado para la 🔥: ordena los partidos de mayor a menor y el filtro +55% usa este mercado">
+      <option value="1x2">🔥 1X2</option><option value="o15">🔥 Over 1.5</option><option value="o25">🔥 Over 2.5</option>
+      <option value="o35">🔥 Over 3.5</option><option value="bts">🔥 BTTS</option><option value="u25">🔥 Under 2.5</option>
+      <option value="c85">🔥 Corners 8.5+</option><option value="c95">🔥 Corners 9.5+</option>
+    </select>
+    <input type="checkbox" id="night" hidden>
+    <button id="prev" class="nav" type="button" aria-label="Fecha anterior con partidos">◀</button>
+    <label for="date" class="sr">Fecha</label>
+    <input type="date" id="date" autocomplete="off">
+    <button id="next" class="nav" type="button" aria-label="Fecha siguiente con partidos">▶</button>
+    <button id="load">Actualizar</button>
+  </div>
+</header>
+<div id="status" role="status" aria-live="polite"></div>
+<details id="warnbox" hidden><summary>Avisos de datos</summary><ul id="warnlist"></ul></details>
+<main id="games"></main>
+<footer>
+  <p>Datos: Football-Data.co.uk (todos los resultados de la temporada y los próximos partidos). Las tablas general, de casa y de fuera, los porcentajes, los corners y las rachas se calculan con esos resultados. Horas convertidas a hora de Ecuador. El local se mide con su tabla general y su tabla en casa (LL); la visita con su tabla general y su tabla fuera (VV). GF = goles a favor por partido, GC = goles en contra por partido.</p>
+  <p>🔥 Confianza: probabilidad 1X2 del favorito (promedio entre General y LL/VV). Los partidos se ordenan de mayor a menor confianza; el filtro 🔥 +55% deja solo los que tienen un favorito con más de 55%.</p>
+  <p>Porcentajes: % de partidos de cada equipo con Over 0.5 a 4.5, BTTS, valla invicta y sin marcar (Local = en casa, Visita = fuera, Promedio = la media de los dos; 🔥 desde 70%). Corners: Local = (a favor local en casa + en contra visita fuera)/2, Visita al revés, Proyección = suma. Rachas actuales (partidos seguidos).</p>
+  <p>% ganador: ganados ÷ jugados. PPG: (ganados × 3 + empates × 1) ÷ jugados (de 0 a 3).</p>
+  <p>1X2: Local = (ganados local + perdidos visita) ÷ partidos de ambos. Empate = (empates local + empates visita) ÷ partidos de ambos. Visita = (ganados visita + perdidos local) ÷ partidos de ambos.</p>
+  <p>Goles: Cruzado → Local = (GF local + GC visita)/2, Visita = (GF visita + GC local)/2, Total = suma (igual a (GF L + GC L)/2 + (GF V + GC V)/2). Suma anotados → GF local + GF visita.</p>
+  <p>Hándicap: A → GF local − GF visita. B local → GF local − GC visita. B visita → GF visita − GC local. Positivo = ese equipo es favorito por esa cantidad de goles.</p>
+</footer>
+<script>
+const $ = (s) => document.querySelector(s);
+const f1 = (v) => (v == null || !isFinite(v) ? "—" : v.toFixed(1));
+const pctTxt = (v) => (v == null || !isFinite(v) ? "—" : (v * 100).toFixed(1) + "%");
+const signed = (d) => (d == null || !isFinite(d) ? "—" : (d > 0 ? "+" : "") + d.toFixed(1));
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const DAYS = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+const MON = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+function isoOf(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+function dayTitle(iso) { const [y,m,d] = iso.split("-").map(Number); const dt = new Date(y, m-1, d); return `${DAYS[dt.getDay()]} ${d} ${MON[m-1]} ${y}`; }
+const LS = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+
+let DATA = null, FROM_CACHE = false, reqId = 0;
+
+// ---------- cálculos ----------
+const f2 = (v) => (v == null || !isFinite(v) ? "—" : v.toFixed(2));
+const winp = (s) => (s && s.gp ? s.w / s.gp : null);
+const ppg = (s) => (s && s.gp ? (s.w * 3 + s.d) / s.gp : null);
+// 1X2 solo si ambos equipos ya jugaron en esa condición
+function x12(L, V) {
+  if (!L || !V || !L.gp || !V.gp) return null;
+  const n = L.gp + V.gp;
+  return { h: (L.w + V.l) / n, d: (L.d + V.d) / n, a: (V.w + L.l) / n };
+}
+function goals(L, V) {
+  if (!L || !V || L.gf == null || L.ga == null || V.gf == null || V.ga == null) return null;
+  const hl = (L.gf + V.ga) / 2, av = (V.gf + L.ga) / 2;
+  return { hl, av, cross: hl + av, sumGF: L.gf + V.gf, hA: L.gf - V.gf, hBh: L.gf - V.ga, hBa: V.gf - L.ga };
+}
+// En fútbol el empate existe: se redondea cada lado
+const score = (l, v) => `<span class="score"><span class="h">${Math.round(l)}</span>–<span class="a">${Math.round(v)}</span></span>`;
+function hcText(d, who) {
+  if (d == null || !isFinite(d)) return "—";
+  if (Math.abs(d) < 0.05) return "Parejo";
+  const other = who === "Local" ? "Visita" : "Local";
+  return d > 0 ? `${who} −${d.toFixed(2)}` : `${other} −${(-d).toFixed(2)}`;
+}
+const ou = (t) => (t == null ? "" : `<div class="sub">${t > 2.5 ? "Over" : "Under"} 2.5</div>`);
+
+// ---------- tarjeta ----------
+function teamRow(name, side, g) {
+  const cls = side === "home" ? "h" : "a";
+  const pos = g ? `${g.pos}º` : "—";
+  return `<div class="team">
+    <span class="tag ${cls}">${side === "home" ? "LOCAL" : "VISITA"}</span>
+    <span class="name">${esc(name)}</span>
+    <span class="info"><span class="pos">${pos}</span><span>${pctTxt(winp(g))}</span>${g ? `<span class="sub">${g.w}-${g.d}-${g.l}</span>` : ""}</span>
+  </div>`;
+}
+function box(name, side, g, s) {
+  const cls = side === "home" ? "h" : "a";
+  const lab = side === "home" ? "Casa" : "Fuera";
+  const row = (t, a, b) => `<tr><td>${t}</td><td>${a}</td><td><b>${b}</b></td></tr>`;
+  const rec = (x) => (x ? `${x.w}-${x.d}-${x.l}` : "—");
+  return `<div class="box ${cls}"><h3>${esc(name)}</h3><table class="mini">
+    <tr><th></th><th>General</th><th>${lab}</th></tr>
+    ${row("PJ", g ? g.gp : "—", s ? s.gp : "—")}
+    ${row("G-E-P", rec(g), rec(s))}
+    ${row("% G", pctTxt(winp(g)), pctTxt(winp(s)))}
+    ${row("PPG", f2(ppg(g)), f2(ppg(s)))}
+    ${row("GF", f2(g && g.gf), f2(s && s.gf))}
+    ${row("GC", f2(g && g.ga), f2(s && s.ga))}
+  </table></div>`;
+}
+function calc(Lg, Ls, Vg, Vs) {
+  const xg = x12(Lg, Vg), xs = x12(Ls, Vs);
+  const tg = goals(Lg, Vg), ts = goals(Ls, Vs);
+  const best = (x) => (x ? ["h", "d", "a"].reduce((m, k) => (x[k] > x[m] ? k : m), "h") : null);
+  const pc = (x, k) => x ? `<span class="pct ${k === "a" ? "a" : k === "h" ? "h" : ""}${best(x) === k ? " fav" : ""}">${pctTxt(x[k])}</span>` : "—";
+  const main = ts || tg;
+  const lineHtml = main
+    ? `<div class="line"><div>Goles <b>${f2(main.cross)}</b></div><div>Hándicap <b>${hcText(main.hA, "Local")}</b></div></div>`
+    : `<div class="line"><span>Sin datos suficientes para la proyección</span></div>`;
+  const two = (fn) => `<td>${tg ? fn(tg) : "—"}</td><td>${ts ? fn(ts) : "—"}</td>`;
+  return `<div class="calc">${lineHtml}
+    <h4>1X2 · probabilidad</h4>
+    <table><tr><th></th><th>1 Local</th><th>X Empate</th><th>2 Visita</th></tr>
+      <tr><td>General</td><td>${pc(xg, "h")}</td><td>${pc(xg, "d")}</td><td>${pc(xg, "a")}</td></tr>
+      <tr><td>LL / VV</td><td>${pc(xs, "h")}</td><td>${pc(xs, "d")}</td><td>${pc(xs, "a")}</td></tr>
+    </table>
+    <h4>PPG (puntos por partido, 0 a 3)</h4>
+    <table><tr><th></th><th>Local</th><th>Visita</th><th>Diferencia</th></tr>
+      <tr><td>General</td><td>${f2(ppg(Lg))}</td><td>${f2(ppg(Vg))}</td><td>${ppg(Lg) != null && ppg(Vg) != null ? signed2(ppg(Lg) - ppg(Vg)) : "—"}</td></tr>
+      <tr><td>LL / VV</td><td>${f2(ppg(Ls))}</td><td>${f2(ppg(Vs))}</td><td>${ppg(Ls) != null && ppg(Vs) != null ? signed2(ppg(Ls) - ppg(Vs)) : "—"}</td></tr>
+    </table>
+    <h4>Promedio de goles por partido</h4>
+    <table><tr><th></th><th>GF local</th><th>GC local</th><th>GF visita</th><th>GC visita</th></tr>
+      <tr><td>General</td><td>${f2(Lg && Lg.gf)}</td><td>${f2(Lg && Lg.ga)}</td><td>${f2(Vg && Vg.gf)}</td><td>${f2(Vg && Vg.ga)}</td></tr>
+      <tr><td>LL / VV</td><td>${f2(Ls && Ls.gf)}</td><td>${f2(Ls && Ls.ga)}</td><td>${f2(Vs && Vs.gf)}</td><td>${f2(Vs && Vs.ga)}</td></tr>
+      <tr><td>Total partido</td><td colspan="2">${Lg && Lg.gf != null ? f2(Lg.gf + Lg.ga) : "—"} <span class="sub">(L gen.)</span></td><td colspan="2">${Vg && Vg.gf != null ? f2(Vg.gf + Vg.ga) : "—"} <span class="sub">(V gen.)</span></td></tr>
+    </table>
+    <h4>Goles totales (over / under)</h4>
+    <table><tr><th></th><th>General</th><th>LL / VV</th></tr>
+      <tr><td>Goles local (GF L + GC V)/2</td>${two((t) => f2(t.hl))}</tr>
+      <tr><td>Goles visita (GF V + GC L)/2</td>${two((t) => f2(t.av))}</tr>
+      <tr><td><b>Total cruzado</b></td>${two((t) => `<b>${f2(t.cross)}</b>${ou(t.cross)}`)}</tr>
+      <tr><td>Marcador posible</td>${two((t) => score(t.hl, t.av))}</tr>
+      <tr><td>Suma anotados (GF L + GF V)</td>${two((t) => f2(t.sumGF))}</tr>
+    </table>
+    <h4>Hándicap (spread de goles)</h4>
+    <table><tr><th></th><th>General</th><th>LL / VV</th></tr>
+      <tr><td>A · GF L − GF V</td>${two((t) => `${signed2(t.hA)}<div class="sub">${hcText(t.hA, "Local")}</div>`)}</tr>
+      <tr><td>B local · GF L − GC V</td>${two((t) => `${signed2(t.hBh)}<div class="sub">${hcText(t.hBh, "Local")}</div>`)}</tr>
+      <tr><td>B visita · GF V − GC L</td>${two((t) => `${signed2(t.hBa)}<div class="sub">${hcText(t.hBa, "Visita")}</div>`)}</tr>
+    </table>
+  </div>`;
+}
+// Confianza 🔥: probabilidad 1X2 del favorito (promedio de General y LL/VV cuando hay ambos)
+function confidence(Lg, Ls, Vg, Vs) {
+  const xs = [x12(Lg, Vg), x12(Ls, Vs)].filter(Boolean);
+  if (!xs.length) return null;
+  const h = xs.reduce((a, x) => a + x.h, 0) / xs.length, a = xs.reduce((a2, x) => a2 + x.a, 0) / xs.length;
+  return h >= a ? { side: "Local", p: h } : { side: "Visita", p: a };
+}
+const HOT = 0.55;
+const signed2 = (d) => (d == null || !isFinite(d) ? "—" : (d > 0 ? "+" : "") + d.toFixed(2));
+
+// ---------- goleadores (RedScores): goles ÷ partidos jugados del equipo, solo 0.80 o más ----------
+const SC_MIN = 0.8;
+const topScorers = () => (DATA?.scorers || []).filter((x) => x.avg != null && x.avg >= SC_MIN).sort((a, b) => b.avg - a.avg);
+function scorersPanel() {
+  if (!DATA?.scorers) return "";
+  const t = topScorers();
+  return `<div class="scorers"><h3>⚽ Goleadores con 0.80 o más goles por partido</h3>${t.length
+    ? `<table class="mini"><tr><th>Jugador</th><th>Equipo</th><th>Goles</th><th>PJ</th><th>Prom.</th></tr>${t.map((x) => `<tr><td>${esc(x.player)}</td><td>${esc(x.team)}</td><td>${x.goals}</td><td>${x.gp}</td><td><b>${x.avg.toFixed(2)}</b></td></tr>`).join("")}</table>`
+    : `<p class="sub">Ningún goleador de esta liga llega a 0.80 goles por partido.</p>`}</div>`;
+}
+function matchScorers(g) {
+  const t = topScorers().filter((x) => x.teamKey === g.homeKey || x.teamKey === g.awayKey);
+  if (!t.length) return "";
+  return `<div class="pscorers">⚽ ${t.map((x) => `<span class="${x.teamKey === g.homeKey ? "h" : "a"}">${esc(x.player)} <b>${x.avg.toFixed(2)}</b> <span class="sub">(${x.goals} en ${x.gp})</span></span>`).join(" · ")}</div>`;
+}
+
+// ---------- porcentajes de Football-Data (goles, BTTS, corners, rachas) ----------
+// Local = su tabla en casa, Visita = su tabla fuera; Promedio = (Local + Visita) / 2
+let EXTRA = null;
+const X = (sec, side, k) => EXTRA?.[sec]?.[side]?.[k] || null;
+const pc0 = (v) => (v == null || !isFinite(v) ? "—" : Math.round(v) + "%");
+const avg2 = (a, b) => (a == null || b == null ? null : (a + b) / 2);
+function mk(g, key) {
+  const L = X("goals", "home", g.homeKey) || X("goals", "all", g.homeKey), V = X("goals", "away", g.awayKey) || X("goals", "all", g.awayKey);
+  const v = (o) => (o && o[key] != null ? o[key] : null);
+  return { L: v(L), V: v(V), P: avg2(v(L), v(V)) };
+}
+function cornersOf(g) {
+  const L = X("corners", "home", g.homeKey), V = X("corners", "away", g.awayKey);
+  if (!L || !V) return null;
+  const cl = avg2(L.for, V.against), cv = avg2(V.for, L.against);
+  return { L, V, cl, cv, tot: cl != null && cv != null ? cl + cv : null,
+    p85: avg2(L["8.5+"], V["8.5+"]), p95: avg2(L["9.5+"], V["9.5+"]), p105: avg2(L["10.5+"], V["10.5+"]) };
+}
+function metricOf(g) {
+  const m = ($("#metric") && $("#metric").value) || "1x2";
+  if (m === "1x2") return g._conf;
+  const map = { o15: ["1.5+", "Over 1.5"], o25: ["2.5+", "Over 2.5"], o35: ["3.5+", "Over 3.5"], bts: ["bts", "BTTS"] };
+  if (map[m]) { const x = mk(g, map[m][0]); return x.P == null ? null : { side: map[m][1], p: x.P / 100 }; }
+  if (m === "u25") { const x = mk(g, "2.5+"); return x.P == null ? null : { side: "Under 2.5", p: 1 - x.P / 100 }; }
+  const c = cornersOf(g);
+  if (!c) return null;
+  const v = m === "c85" ? c.p85 : c.p95;
+  return v == null ? null : { side: m === "c85" ? "Corners 8.5+" : "Corners 9.5+", p: v / 100 };
+}
+const STREAK = [["w", "Gana"], ["d", "Empata"], ["l", "Pierde"], ["no l", "Invicto"], ["no w", "Sin ganar"], ["no gf", "Sin marcar"], ["no ga", "Sin recibir"], ["no d", "Sin empatar"]];
+function streakText(o) {
+  if (!o) return "—";
+  const t = STREAK.filter(([k]) => o[k] > 0).map(([k, n]) => `${n} ${o[k]}`);
+  return t.length ? t.join(" · ") : "—";
+}
+function pctBox(g) {
+  if (!EXTRA) return `<div class="calc pcts"><span class="sub">${EXTRA_LOADING ? "Cargando porcentajes de Football-Data…" : "Porcentajes de Football-Data no disponibles."}</span></div>`;
+  const rows = [["0.5+", "Over 0.5"], ["1.5+", "Over 1.5"], ["2.5+", "Over 2.5"], ["3.5+", "Over 3.5"], ["4.5+", "Over 4.5"], ["bts", "BTTS (ambos marcan)"], ["cs", "Valla invicta"], ["fts", "No marca"]];
+  const gt = (k) => { const x = mk(g, k); const hotp = x.P != null && x.P >= 70; return `<tr><td>${rows.find((r) => r[0] === k)[1]}</td><td>${pc0(x.L)}</td><td>${pc0(x.V)}</td><td class="${hotp ? "hotp" : ""}"><b>${pc0(x.P)}</b>${hotp ? " 🔥" : ""}</td></tr>`; };
+  const goals = EXTRA.goals ? `<h4>Goles y BTTS · % de partidos</h4><table><tr><th></th><th>Local (casa)</th><th>Visita (fuera)</th><th>Promedio</th></tr>${rows.map(([k]) => gt(k)).join("")}
+      <tr><td>Goles por partido</td><td>${f2(mk(g, "avg").L)}</td><td>${f2(mk(g, "avg").V)}</td><td><b>${f2(mk(g, "avg").P)}</b></td></tr></table>` : `<h4>Goles y BTTS</h4><p class="sub">—</p>`;
+  const c = cornersOf(g);
+  const corners = c ? `<h4>Corners</h4><table><tr><th></th><th>Local (casa)</th><th>Visita (fuera)</th><th>Proyección</th></tr>
+      <tr><td>A favor / en contra</td><td>${f2(c.L.for)} / ${f2(c.L.against)}</td><td>${f2(c.V.for)} / ${f2(c.V.against)}</td><td><b>${f2(c.cl)} – ${f2(c.cv)}</b></td></tr>
+      <tr><td>Total por partido</td><td>${f2(c.L.total)}</td><td>${f2(c.V.total)}</td><td><b>${f2(c.tot)}</b></td></tr>
+      ${[["8.5+", c.p85], ["9.5+", c.p95], ["10.5+", c.p105]].map(([n, v]) => `<tr><td>Over ${n.replace("+", "")}</td><td>${pc0(c.L[n])}</td><td>${pc0(c.V[n])}</td><td class="${v >= 70 ? "hotp" : ""}"><b>${pc0(v)}</b>${v >= 70 ? " 🔥" : ""}</td></tr>`).join("")}</table>`
+    : `<h4>Corners</h4><p class="sub">— (esta liga no trae corners)</p>`;
+  const sL = X("streaks", "home", g.homeKey), sV = X("streaks", "away", g.awayKey), sLa = X("streaks", "all", g.homeKey), sVa = X("streaks", "all", g.awayKey);
+  const streaks = EXTRA.streaks ? `<h4>Rachas actuales</h4><table><tr><th></th><th>Local</th><th>Visita</th></tr>
+      <tr><td>En casa / fuera</td><td>${streakText(sL)}</td><td>${streakText(sV)}</td></tr>
+      <tr><td>General</td><td>${streakText(sLa)}</td><td>${streakText(sVa)}</td></tr></table>` : "";
+  return `<div class="calc pcts">${goals}${corners}${streaks}</div>`;
+}
+let EXTRA_LOADING = false;
+async function loadExtra(my, league) {
+  EXTRA = null; EXTRA_LOADING = true;
+  try {
+    const r = await fetch(`${apiBase()}?part=extra&league=${encodeURIComponent(league)}`);
+    const d = await r.json();
+    if (my !== reqId) return;
+    EXTRA = d && d.ok ? d : null;
+    if (d.errors && d.errors.length) (DATA.warnings ||= []).push(`Porcentajes: no se pudo leer ${d.errors.join(" · ")}`);
+  } catch (e) { if (my !== reqId) return; }
+  EXTRA_LOADING = false;
+  render();
+}
+
+// ---------- fechas ----------
+function gameDates() { return [...new Set((DATA?.games || []).map((g) => g.date).filter(Boolean))].sort(); }
+function pickDefaultDate() {
+  const ds = gameDates(), today = isoOf(new Date());
+  if (!ds.length) return today;
+  if (ds.includes(today)) return today;
+  // 🌙: si AnnaBet pone partidos mañana (UTC), pueden ser esta noche: se abre hoy
+  if ($("#night").checked) { const t = new Date(); const tm = isoOf(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1)); if (ds.includes(tm)) return today; }
+  return ds.find((d) => d > today) || ds[ds.length - 1];
+}
+function shift(dir) {
+  const ds = gameDates(), cur = $("#date").value || isoOf(new Date());
+  const nxt = dir > 0 ? ds.find((d) => d > cur) : [...ds].reverse().find((d) => d < cur);
+  if (nxt) { $("#date").value = nxt; render(); }
+}
+
+function render() {
+  if (!DATA) return;
+  const el = $("#games"), st = $("#status");
+  const S = DATA.standings || {};
+  const day = $("#date").value;
+  const q = ($("#q").value || "").trim().toLowerCase();
+  // 🌙: también los partidos que AnnaBet pone al día siguiente (pueden ser esta noche en Ecuador)
+  const nextDay = (() => { const [y, m, d] = day.split("-").map(Number); return isoOf(new Date(y, m - 1, d + 1)); })();
+  const withNight = $("#night").checked;
+  const all = (DATA.games || []).filter((g) => g.date === day || (withNight && g.date === nextDay && !g.score));
+  const onlyHot = $("#hot").checked;
+  const stOf = (g) => [S.all?.[g.homeKey], (S.home || S.all)?.[g.homeKey], S.all?.[g.awayKey], (S.away || S.all)?.[g.awayKey]];
+  for (const g of all) { g._conf = confidence(...stOf(g)); g._m = metricOf(g); }
+  // Los de mayor confianza primero (según el mercado elegido)
+  all.sort((a, b) => (b._m?.p ?? -1) - (a._m?.p ?? -1));
+  const list = all.filter((g) => (!q || (g.home + " " + g.away).toLowerCase().includes(q)) &&
+    (!onlyHot || (g._m && g._m.p > HOT)));
+  const ds = gameDates();
+  if (!all.length) {
+    const next = ds.find((d) => d > day), prev = [...ds].reverse().find((d) => d < day);
+    el.innerHTML = `<div class="empty">No hay partidos de ${esc(DATA.title)} el ${dayTitle(day)}.` +
+      (next ? ` Próxima fecha con partidos: <b>${dayTitle(next)}</b> (usa ▶).` : prev ? ` Última fecha con partidos: <b>${dayTitle(prev)}</b> (usa ◀).` : " Football-Data no muestra partidos para esta liga ahora.") +
+      (!(DATA.games || []).some((g) => !g.score) ? `<br><br><b>Football-Data todavía no publicó próximos partidos de esta liga</b>. Cuando los publique, aparecerán aquí solos.` : "") + `</div>`;
+  } else if (!list.length) {
+    el.innerHTML = onlyHot
+      ? `<div class="empty">Ningún partido de este día tiene un favorito con más de 55%. Desmarca 🔥 +55% para ver todos.</div>`
+      : `<div class="empty">Ningún partido coincide con la búsqueda.</div>`;
+  } else {
+    el.innerHTML = `<h2 class="day">${esc(DATA.title)} · ${dayTitle(day)}</h2>` + scorersPanel() + list.map((g) => {
+      const Lg = S.all?.[g.homeKey], Ls = (S.home || S.all)?.[g.homeKey];
+      const Vg = S.all?.[g.awayKey], Vs = (S.away || S.all)?.[g.awayKey];
+      const fin = g.score ? `<span class="final">Final ${g.score[0]}–${g.score[1]}</span>` : "";
+      const hc = g.hc != null ? ` · HC ${g.hc > 0 ? "+" : ""}${g.hc}` : "";
+      const odds = g.odds ? `<span class="odds" title="Cuotas promedio 1 / X / 2 (Football-Data)">Cuotas ${g.odds.join(" · ")}${hc}</span>` : "";
+      const c = g._m;
+      const hot = c && c.p > HOT;
+      const flame = c ? `<span class="flame${hot ? " hot" : ""}" title="Confianza del mercado elegido">🔥 ${c.side} ${(c.p * 100).toFixed(0)}%</span>` : "";
+      const nightNote = g.date !== day ? `<div class="meta night">🌙 AnnaBet lo pone el ${dayTitle(g.date)} (hora UTC): si es de noche, en Ecuador se juega el ${dayTitle(day)}</div>` : "";
+      return `<article class="game${hot ? " hot" : ""}">
+        <div class="meta"><span>${g.time ? esc(g.time) + ' <span class="sub">(Ecuador)</span>' : (g.score ? "" : "Hora por confirmar")} ${fin}</span>${flame}</div>
+        ${odds ? `<div class="meta">${odds}</div>` : ""}
+        ${nightNote}
+        <div class="teams">${teamRow(g.home, "home", Lg)}${teamRow(g.away, "away", Vg)}</div>
+        <div class="boxes">${box(g.home, "home", Lg, Ls)}${box(g.away, "away", Vg, Vs)}</div>
+        ${matchScorers(g)}
+        ${pctBox(g)}
+        ${calc(Lg, Ls, Vg, Vs)}
+      </article>`;
+    }).join("");
+  }
+  const when = new Date(DATA.updated).toLocaleString("es-EC");
+  const hidden = all.length - list.length;
+  st.className = FROM_CACHE ? "warn" : "";
+  st.textContent = FROM_CACHE
+    ? `No se pudo conectar con Football-Data. Mostrando datos guardados del ${when}.`
+    : `${list.length} partido(s) · ${dayTitle(day)}${hidden ? ` (${hidden} ocultos por ${onlyHot ? "el filtro 🔥" : "la búsqueda"})` : ""} · ${ds.length} fecha(s) con partidos en la liga · actualizado ${when}`;
+  const w = DATA.warnings || [];
+  $("#warnbox").hidden = !w.length;
+  $("#warnlist").innerHTML = w.map((x) => `<li>${esc(x)}</li>`).join("");
+}
+
+// ---------- fuente: AnnaBet o RedScores ----------
+let SRC = "ab"; // solo AnnaBet
+const P = () => "fd-radar:";
+const apiBase = () => "/api/fd";
+const DEFAULT_LEAGUE = () => "E0";
+const leagueLabel = (id) => (/\//.test(id) ? id.split("/").slice(0, 2).join(": ").replace(/-/g, " ") : id.replace(/^serie_\d+_/, "").replace(/_/g, " "));
+const API = "/api/futbol";
+// ---------- partidos próximos (pestaña "Upcoming Games" y página del día de AnnaBet) ----------
+let AUTO_DATE = true;
+let NIGHT_SET = false;
+// Ligas de América: la casilla 🌙 se marca sola (salvo que la hayas cambiado tú)
+const AMERICAS = /brazil|brasil|colombia|argentin|mexic|major league soccer|\bmls\b|\busl\b|chile|peru|ecuador|urugua|paragua|bolivia|venezuel|canad|costa rica|hondur|guatemal|salvador|panam|nicaragu|jamaica|liga mx|libertadores|sudamericana|concacaf/i;
+function autoNight() { $("#night").checked = false; return; // Football-Data: horas ya en Ecuador, no hace falta
+
+  const saved = LS.get("fd-radar:night");
+  if (saved != null) { $("#night").checked = saved === "1" && AMERICAS.test(`${DATA?.title} ${DATA?.league}`); return; }
+  $("#night").checked = AMERICAS.test(`${DATA?.title} ${DATA?.league}`);
+} // la fecha se elige sola hasta que el usuario la cambie
+const tkc = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+function teamIndex() {
+  const S = DATA.standings || {}, names = {};
+  for (const m of [S.all, S.home, S.away]) for (const [k, v] of Object.entries(m || {})) names[k] ||= v.team;
+  const keys = Object.keys(names);
+  const keyOf = (name, exactOnly) => {
+    const k = tkc(name);
+    if (!k) return null;
+    if (names[k]) return k;
+    if (exactOnly) return null;
+    if (k.length < 5) return null;
+    const hits = keys.filter((x) => x.length >= 5 && (x.includes(k) || k.includes(x)));
+    if (hits.length !== 1) return null;
+    // "Oberhausen W", "Dortmund U19", "Bonner SC II" son otros equipos (femenino, juvenil, filial)
+    const extra = (k.length > hits[0].length ? k.replace(hits[0], "") : hits[0].replace(k, ""));
+    if (/^(w|women|femenino|ii|iii|b|u\d{2}|res|reserves|youth)$/.test(extra)) return null;
+    return hits[0];
+  };
+  return { keyOf, nameOf: (k) => names[k] };
+}
+async function loadUpcoming(my) {
+  const urls = DATA?.upcomingUrls || [];
+  if (!urls.length) return;
+  const res = await Promise.allSettled(urls.map((p) =>
+    fetch(`${API}?part=rows&path=${encodeURIComponent(p)}`).then((r) => r.json())));
+  if (my !== reqId || !DATA) return;
+  const { keyOf, nameOf } = teamIndex();
+  const idx = new Map(DATA.games.map((g) => [`${g.date}|${g.homeKey}|${g.awayKey}`, g]));
+  let added = 0, read = 0;
+  const shiftDay = (d, n) => { const [y, m, dd] = d.split("-").map(Number); return isoOf(new Date(y, m - 1, dd + n)); };
+  for (const r of res) {
+    if (r.status !== "fulfilled" || !r.value || !r.value.ok) continue;
+    read++;
+    // la página del día trae todas las ligas: ahí solo nombres exactos (sin parecidos)
+    const strict = /results_/.test(r.value.path || "");
+    for (const row of r.value.rows || []) {
+      const hk = keyOf(row.a, strict), ak = keyOf(row.b, strict);
+      if (!hk || !ak || hk === ak || !row.date) continue;
+      const id = `${row.date}|${hk}|${ak}`;
+      // el mismo partido puede venir con un día de diferencia (hora UTC): se une, no se duplica
+      const g = idx.get(id) || idx.get(`${shiftDay(row.date, -1)}|${hk}|${ak}`) || idx.get(`${shiftDay(row.date, 1)}|${hk}|${ak}`);
+      if (g) {
+        if (!g.score && row.score) { g.score = row.score; if (row.ot) g.ot = row.ot; }
+        g.time ||= row.time; g.odds ||= row.odds;
+        continue;
+      }
+      const ng = { date: row.date, time: row.time || "", home: nameOf(hk), away: nameOf(ak), homeKey: hk, awayKey: ak,
+        score: row.score || null, odds: row.odds || null, hc: null, ...(row.ot ? { ot: row.ot } : {}) };
+      DATA.games.push(ng); idx.set(id, ng); added++;
+    }
+  }
+  const today = isoOf(new Date());
+  const future = DATA.games.some((g) => g.date >= today && !g.score);
+  if (!future) {
+    const pr = DATA.upcomingProbe || {};
+    const info = res.map((r, i) => `${urls[i].replace(/^.*\//, "")}: ${r.status === "fulfilled" && r.value ? (r.value.ok ? (r.value.rows || []).length + " filas" : "error " + (r.value.error || "")) : "sin respuesta"}`).join(" · ");
+    const hints = [pr.ajax ? String(pr.ajax).slice(0, 500) : null, ...(pr.ajax ? [] : [...(pr.ids || []).slice(0, 3), ...(pr.snippets || []).slice(0, 3)].map((x) => String(x).slice(0, 160)))].filter(Boolean).join(" ‖ ");
+    const samples = res.map((r, i) => r.status === "fulfilled" && r.value && r.value.sample && r.value.sample.length
+      ? `${urls[i].replace(/^.*\//, "").slice(0, 40)} (${r.value.bytes} bytes) → ${r.value.sample.flat().slice(0, 6).join(" ¦ ")}`
+      : r.status === "fulfilled" && r.value && (r.value.rows || []).length
+        ? `${urls[i].replace(/^.*\//, "").slice(0, 30)} trae otros equipos: ${r.value.rows.slice(0, 3).map((x) => `${x.date} ${x.a} - ${x.b}`).join(" / ")}` : null).filter(Boolean).join(" ‖ ");
+    (DATA.warnings ||= []).push(`Próximos partidos: AnnaBet no mostró partidos por jugar de esta liga. Fuentes: ${info}.${hints ? " Pistas: " + hints : ""}${samples ? " Muestra: " + samples : ""}`);
+  }
+  if (added && AUTO_DATE) $("#date").value = pickDefaultDate();
+  render();
+}
+
+// ---------- carga ----------
+async function load(keepDate, retried) {
+  const league = $("#league").value;
+  const my = ++reqId;
+  if (!keepDate) AUTO_DATE = true;
+  const btn = $("#load");
+  btn.disabled = true; btn.textContent = "Cargando…";
+  const lname = $("#league").selectedOptions[0]?.textContent || league;
+  $("#status").className = ""; $("#status").textContent = `Cargando ${lname} desde Football-Data…`;
+  if (!keepDate) { $("#games").innerHTML = `<div class="empty">Cargando ${esc(lname)}…</div>`; $("#warnbox").hidden = true; }
+  const cacheKey = P() + league;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 25000);
+    const r = await fetch(`${apiBase()}?league=${encodeURIComponent(league)}`, { signal: ctrl.signal });
+    clearTimeout(t);
+    let data;
+    try { data = await r.json(); } catch { throw new Error(`respuesta no válida (HTTP ${r.status})`); }
+    if (!r.ok || !data.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    if (my !== reqId) return;
+    LS.set(cacheKey, JSON.stringify(data));
+    DATA = data; FROM_CACHE = false;
+  } catch (e) {
+    if (my !== reqId) return;
+    // Un reintento automático: AnnaBet a veces tarda la primera vez
+    if (!retried) { $("#status").textContent = "Football-Data tardó en responder, reintentando…"; await new Promise((r) => setTimeout(r, 1200)); if (my === reqId) return load(keepDate, true); return; }
+    let saved = null;
+    try { saved = JSON.parse(LS.get(cacheKey) || "null"); } catch {}
+    if (saved) { DATA = saved; FROM_CACHE = true; }
+    else {
+      DATA = null;
+      $("#games").innerHTML = "";
+      $("#warnbox").hidden = true;
+      $("#status").className = "err";
+      $("#status").textContent = `No se pudieron cargar los datos: ${e.name === "AbortError" ? "tiempo de espera agotado" : e.message}. Prueba con Actualizar u otra liga.`;
+    }
+  } finally {
+    if (my === reqId) { btn.disabled = false; btn.textContent = "Actualizar"; }
+  }
+  if (DATA && my === reqId) {
+    autoNight();
+    if (!keepDate || !gameDates().includes($("#date").value)) $("#date").value = pickDefaultDate();
+    render();
+    loadUpcoming(my);
+    EXTRA = DATA.extra || null; EXTRA_LOADING = false; render();
+  }
+}
+
+async function loadLeagues() {
+  const sel = $("#league");
+  const saved = LS.get(P() + "league") || DEFAULT_LEAGUE();
+  try {
+    const r = await fetch(`${apiBase()}?part=leagues`);
+    const data = await r.json();
+    let list = data.leagues || [];
+    // lista completa de AnnaBet: se guarda; si AnnaBet no respondió, se usa la última lista completa guardada
+    if (data.source === "soccerstats" && list.length > 20) LS.set(P() + "leagues", JSON.stringify(list));
+    else { try { const old = JSON.parse(LS.get(P() + "leagues") || "null"); if (old && old.length > list.length) list = old; } catch {} }
+    if (list.length) sel.innerHTML = list.map(([id, name]) => `<option value="${esc(id)}">${esc(name)}</option>`).join("");
+  } catch {
+    try { const old = JSON.parse(LS.get(P() + "leagues") || "null"); if (old && old.length) sel.innerHTML = old.map(([id, name]) => `<option value="${esc(id)}">${esc(name)}</option>`).join(""); } catch {}
+  }
+  if (![...sel.options].some((o) => o.value === saved)) sel.insertAdjacentHTML("afterbegin", `<option value="${esc(saved)}">${esc(leagueLabel(saved))}</option>`);
+  sel.value = saved;
+  addCustomOption();
+}
+
+// Opción para cualquier liga de AnnaBet que no esté en el menú: se pega el enlace
+function addCustomOption() { return; // Football-Data: solo las ligas del menú
+
+  const sel = $("#league");
+  if (![...sel.options].some((o) => o.value === "__custom"))
+    sel.insertAdjacentHTML("beforeend", `<option value="__custom">➕ Otra liga (pegar enlace de Football-Data)…</option>`);
+}
+let lastLeague = null;
+$("#league").addEventListener("focus", () => { lastLeague = $("#league").value; });
+$("#league").addEventListener("change", () => {
+  const sel = $("#league");
+  if (sel.value === "__custom") {
+    const url = prompt("Pega el enlace de la liga en Football-Data (ej.: https://www.soccerstats.com/latest.asp?league=england)") || "";
+    const m = /league=([a-z0-9_]+)/i.exec(url);
+    if (!m) { sel.value = lastLeague || sel.options[0].value; return; }
+    if (![...sel.options].some((o) => o.value === m[1]))
+      sel.insertAdjacentHTML("afterbegin", `<option value="${esc(m[1].toLowerCase())}">${esc(m[1])}</option>`);
+    sel.value = m[1].toLowerCase();
+  }
+  LS.set(P() + "league", sel.value); $("#q").value = ""; load(false);
+});
+// Si la liga elegida no es la que está cargada, se carga la nueva desde cero
+$("#load").addEventListener("click", () => load(!(DATA && DATA.league !== $("#league").value)));
+// Algunos navegadores no avisan "change" al elegir escribiendo: se revisa también al soltar la lista
+$("#league").addEventListener("blur", () => { const v = $("#league").value; if (v !== "__custom" && DATA && DATA.league !== v && !$("#load").disabled) { LS.set(P() + "league", v); $("#q").value = ""; load(false); } });
+$("#date").addEventListener("change", () => { AUTO_DATE = false; DATA && render(); });
+$("#prev").addEventListener("click", () => { AUTO_DATE = false; shift(-1); });
+$("#next").addEventListener("click", () => { AUTO_DATE = false; shift(1); });
+$("#q").addEventListener("input", () => DATA && render());
+$("#hot").addEventListener("change", () => DATA && render());
+try { $("#metric").value = localStorage.getItem("fd-radar:metric") || "1x2"; } catch {}
+$("#metric").addEventListener("change", () => { try { localStorage.setItem("fd-radar:metric", $("#metric").value); } catch {} DATA && render(); });
+$("#night").addEventListener("change", () => { NIGHT_SET = true; LS.set("fd-radar:night", $("#night").checked ? "1" : "0"); DATA && render(); });
+$("#date").value = isoOf(new Date());
+loadLeagues().then(() => load(false));
+</script>
+</body>
+</html>
